@@ -1,6 +1,5 @@
-/* $OpenBSD: auth2-kbdint.c,v 1.5 2006/08/03 03:34:41 deraadt Exp $ */
 /*
- * Copyright (c) 2000 Markus Friedl.  All rights reserved.
+ * Copyright (c) 2002 Chris Adams.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,44 +24,8 @@
 
 #include "includes.h"
 
-#include <sys/types.h>
+#ifdef HAVE_OSF_SIA
 
-#include <stdarg.h>
+void	session_setup_sia(struct passwd *, char *);
 
-#include "xmalloc.h"
-#include "packet.h"
-#include "key.h"
-#include "hostfile.h"
-#include "auth.h"
-#include "log.h"
-#include "buffer.h"
-#include "servconf.h"
-
-/* import */
-extern ServerOptions options;
-
-static int
-userauth_kbdint(Authctxt *authctxt)
-{
-	int authenticated = 0;
-	char *lang, *devs;
-
-	lang = packet_get_string(NULL);
-	devs = packet_get_string(NULL);
-	packet_check_eom();
-
-	debug("keyboard-interactive devs %s", devs);
-
-	if (options.challenge_response_authentication)
-		authenticated = auth2_challenge(authctxt, devs);
-
-	xfree(devs);
-	xfree(lang);
-	return authenticated;
-}
-
-Authmethod method_kbdint = {
-	"keyboard-interactive",
-	userauth_kbdint,
-	&options.kbd_interactive_authentication
-};
+#endif /* HAVE_OSF_SIA */

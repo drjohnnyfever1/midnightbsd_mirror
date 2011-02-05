@@ -1,6 +1,7 @@
-/* $OpenBSD: auth2-kbdint.c,v 1.5 2006/08/03 03:34:41 deraadt Exp $ */
+/* $Id: audit.h,v 1.3 2011-02-05 14:07:23 laffer1 Exp $ */
+
 /*
- * Copyright (c) 2000 Markus Friedl.  All rights reserved.
+ * Copyright (c) 2004, 2005 Darren Tucker.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,46 +24,34 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "includes.h"
+#ifndef _SSH_AUDIT_H
+# define _SSH_AUDIT_H
 
-#include <sys/types.h>
+#include "loginrec.h"
 
-#include <stdarg.h>
-
-#include "xmalloc.h"
-#include "packet.h"
-#include "key.h"
-#include "hostfile.h"
-#include "auth.h"
-#include "log.h"
-#include "buffer.h"
-#include "servconf.h"
-
-/* import */
-extern ServerOptions options;
-
-static int
-userauth_kbdint(Authctxt *authctxt)
-{
-	int authenticated = 0;
-	char *lang, *devs;
-
-	lang = packet_get_string(NULL);
-	devs = packet_get_string(NULL);
-	packet_check_eom();
-
-	debug("keyboard-interactive devs %s", devs);
-
-	if (options.challenge_response_authentication)
-		authenticated = auth2_challenge(authctxt, devs);
-
-	xfree(devs);
-	xfree(lang);
-	return authenticated;
-}
-
-Authmethod method_kbdint = {
-	"keyboard-interactive",
-	userauth_kbdint,
-	&options.kbd_interactive_authentication
+enum ssh_audit_event_type {
+	SSH_LOGIN_EXCEED_MAXTRIES,
+	SSH_LOGIN_ROOT_DENIED,
+	SSH_AUTH_SUCCESS,
+	SSH_AUTH_FAIL_NONE,
+	SSH_AUTH_FAIL_PASSWD,
+	SSH_AUTH_FAIL_KBDINT,	/* keyboard-interactive or challenge-response */
+	SSH_AUTH_FAIL_PUBKEY,	/* ssh2 pubkey or ssh1 rsa */
+	SSH_AUTH_FAIL_HOSTBASED,	/* ssh2 hostbased or ssh1 rhostsrsa */
+	SSH_AUTH_FAIL_GSSAPI,
+	SSH_INVALID_USER,
+	SSH_NOLOGIN,		/* denied by /etc/nologin, not implemented */
+	SSH_CONNECTION_CLOSE,	/* closed after attempting auth or session */
+	SSH_CONNECTION_ABANDON,	/* closed without completing auth */
+	SSH_AUDIT_UNKNOWN
 };
+typedef enum ssh_audit_event_type ssh_audit_event_t;
+
+void	audit_connection_from(const char *, int);
+void	audit_event(ssh_audit_event_t);
+void	audit_session_open(struct logininfo *);
+void	audit_session_close(struct logininfo *);
+void	audit_run_command(const char *);
+ssh_audit_event_t audit_classify_auth(const char *);
+
+#endif /* _SSH_AUDIT_H */

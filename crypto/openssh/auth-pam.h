@@ -1,6 +1,7 @@
-/* $OpenBSD: auth2-kbdint.c,v 1.5 2006/08/03 03:34:41 deraadt Exp $ */
+/* $Id: auth-pam.h,v 1.6 2011-02-05 14:07:23 laffer1 Exp $ */
+
 /*
- * Copyright (c) 2000 Markus Friedl.  All rights reserved.
+ * Copyright (c) 2000 Damien Miller.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,45 +25,26 @@
  */
 
 #include "includes.h"
+#ifdef USE_PAM
 
-#include <sys/types.h>
+#if !defined(SSHD_PAM_SERVICE)
+# define SSHD_PAM_SERVICE		__progname
+#endif
 
-#include <stdarg.h>
+void start_pam(Authctxt *);
+void finish_pam(void);
+u_int do_pam_account(void);
+void do_pam_session(void);
+void do_pam_set_tty(const char *);
+void do_pam_setcred(int );
+void do_pam_chauthtok(void);
+int do_pam_putenv(char *, char *);
+char ** fetch_pam_environment(void);
+char ** fetch_pam_child_environment(void);
+void free_pam_environment(char **);
+void sshpam_thread_cleanup(void);
+void sshpam_cleanup(void);
+int sshpam_auth_passwd(Authctxt *, const char *);
+int is_pam_session_open(void);
 
-#include "xmalloc.h"
-#include "packet.h"
-#include "key.h"
-#include "hostfile.h"
-#include "auth.h"
-#include "log.h"
-#include "buffer.h"
-#include "servconf.h"
-
-/* import */
-extern ServerOptions options;
-
-static int
-userauth_kbdint(Authctxt *authctxt)
-{
-	int authenticated = 0;
-	char *lang, *devs;
-
-	lang = packet_get_string(NULL);
-	devs = packet_get_string(NULL);
-	packet_check_eom();
-
-	debug("keyboard-interactive devs %s", devs);
-
-	if (options.challenge_response_authentication)
-		authenticated = auth2_challenge(authctxt, devs);
-
-	xfree(devs);
-	xfree(lang);
-	return authenticated;
-}
-
-Authmethod method_kbdint = {
-	"keyboard-interactive",
-	userauth_kbdint,
-	&options.kbd_interactive_authentication
-};
+#endif /* USE_PAM */
